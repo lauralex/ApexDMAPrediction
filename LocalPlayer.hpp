@@ -14,7 +14,9 @@ struct LocalPlayer {
     bool IsZooming;
 
     int Team;
+    int Squad;
     Vector3D LocalOrigin;
+    Vector3D AbsoluteVelocity;
     Vector3D CameraPosition;
 
     Vector2D ViewAngles;
@@ -67,6 +69,9 @@ struct LocalPlayer {
         // Scatter read request for Team
         uint64_t teamAddress = BasePointer + OFF_TEAM_NUMBER;
 		mem.AddScatterReadRequest(handle, teamAddress, &Team, sizeof(int));
+
+        uint64_t squadAddress = BasePointer + OFF_SQUAD_ID;
+        mem.AddScatterReadRequest(handle, squadAddress, &Squad, sizeof(int));
 
         // Scatter read request for LocalOrigin
         uint64_t localOriginAddress = BasePointer + OFF_LOCAL_ORIGIN;
@@ -123,6 +128,9 @@ struct LocalPlayer {
             // Scatter read request for WeaponProjectileSpeed
             uint64_t weaponProjectileSpeedAddress = WeaponEntity + OFF_PROJECTILESPEED;
             mem.AddScatterReadRequest(handle, weaponProjectileSpeedAddress, &WeaponProjectileSpeed, sizeof(float));
+
+            uint64_t playerAbsoluteVelocityAddress = BasePointer + OFF_ABSVELOCITY;
+            mem.AddScatterReadRequest(handle, playerAbsoluteVelocityAddress, &AbsoluteVelocity, sizeof(Vector3D));
 
             // Scatter read request for WeaponProjectileScale
             uint64_t weaponProjectileScaleAddress = WeaponEntity + OFF_PROJECTILESCALE;

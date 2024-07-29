@@ -43,7 +43,8 @@ struct Player {
     bool IsAimedAt;
 
     uint64_t LastVisibleCheckTime = 0;
-    int LastVisibleTime;
+    float WorldTime;
+    float LastVisibleTime;
     int LastTimeVisiblePrevious = 0;
     bool LastVisibleState = false;
     int VisCheckCount = 0;
@@ -77,30 +78,9 @@ struct Player {
     }
 
 
-    bool VisCheck() {
-        uint64_t VisibleCheckTime = GetMilliseconds();
-
-        if (VisibleCheckTime >= LastVisibleCheckTime + 10) {
-            LastVisibleState = false;
-            if (LastVisibleTime > LastTimeVisiblePrevious) {
-                LastVisibleState = true;
-                VisCheckCount = 0;
-            }
-            else if (LastVisibleTime < 0 && LastTimeVisiblePrevious > 0) {
-                LastVisibleState = true;
-                VisCheckCount = 0;
-            }
-            else if(LastVisibleTime == LastTimeVisiblePrevious) {
-                VisCheckCount++;
-                if (VisCheckCount < VisCheckThreshold) {
-                    LastVisibleState = true;
-                }
-            }
-            LastTimeVisiblePrevious = LastVisibleTime;
-            LastVisibleCheckTime = VisibleCheckTime;
-        }
-
-        return LastVisibleState;
+    bool VisCheck() const
+    {
+        return (LastVisibleTime + 0.2) >= WorldTime || IsAimedAt;
     }
 
     void ValidCheck() {
@@ -110,6 +90,14 @@ struct Player {
 				Valid = 0;
 			}
         }
+    }
+
+    bool is_teammate() const
+    {
+        if (LvMap::m_mixtape && Myself->Squad == -1) {
+            return (Team & 1) == (Myself->Team & 1);
+        }
+        return Team == Myself->Team;
     }
 
     void Read() {
@@ -123,7 +111,7 @@ struct Player {
 
         if (Myself->IsValid()) {
             IsLocal = Myself->BasePointer == BasePointer;
-            IsAlly = Myself->Team == Team;
+            IsAlly = is_teammate();
             IsHostile = !IsAlly;
             DistanceToLocalPlayer = Myself->LocalOrigin.Distance(LocalOrigin);
             Distance2DToLocalPlayer = Myself->LocalOrigin.To2D().Distance(LocalOrigin.To2D());

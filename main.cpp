@@ -41,6 +41,8 @@ void MiscBaseScatter(Level* map, LocalPlayer* myself, Camera* gameCamera, Sense*
 	// Scatter read request for Level
 	uint64_t levelAddress = mem.OFF_BASE + OFF_LEVEL;
 	mem.AddScatterReadRequest(handle, levelAddress, &map->NameBuffer, sizeof(map->NameBuffer));
+    uint64_t gameModeAddress = mem.OFF_BASE + OFF_GAMEMODE;
+    mem.AddScatterReadRequest(handle, gameModeAddress, &map->gameModePtr, sizeof(uint64_t));
 
 	// Scatter read request for LocalPlayer BasePointer
 	uint64_t localPlayerAddress = mem.OFF_BASE + OFF_LOCAL_PLAYER;
@@ -166,9 +168,7 @@ void ScatterReadPlayerAttributes(std::vector<Player*>& players) {
                 uint64_t isKnockedAddress = player->BasePointer + OFF_BLEEDOUT_STATE;
                 mem.AddScatterReadRequest(handle, isKnockedAddress, &player->IsKnocked, sizeof(bool));
 
-                // Scatter read request for AbsoluteVelocity
-                uint64_t absoluteVelocityAddress = player->BasePointer + OFF_ABSVELOCITY;
-                mem.AddScatterReadRequest(handle, absoluteVelocityAddress, &player->AbsoluteVelocity, sizeof(Vector3D));
+                
 
                 // Scatter read requests for Glow
                 uint64_t glowEnableAddress = player->BasePointer + OFF_GLOW_ENABLE;
@@ -181,8 +181,10 @@ void ScatterReadPlayerAttributes(std::vector<Player*>& players) {
                 // Scatter read request for Visibility
                 uint64_t lastTimeAimedAtAddress = player->BasePointer + OFF_LAST_AIMEDAT_TIME;
                 uint64_t lastVisibleTimeAddress = player->BasePointer + OFF_LAST_VISIBLE_TIME;
+                uint64_t worldTimeAddress = Myself->BasePointer + OFF_TIME_BASE;
                 mem.AddScatterReadRequest(handle, lastTimeAimedAtAddress, &player->LastTimeAimedAt, sizeof(int));
-                mem.AddScatterReadRequest(handle, lastVisibleTimeAddress, &player->LastVisibleTime, sizeof(int));
+                mem.AddScatterReadRequest(handle, lastVisibleTimeAddress, &player->LastVisibleTime, sizeof(float));
+                mem.AddScatterReadRequest(handle, worldTimeAddress, &player->WorldTime, sizeof(float));
 
                 // Scatter read request for Yaw
                 uint64_t viewYawAddress = player->BasePointer + OFF_YAW;
@@ -197,6 +199,10 @@ void ScatterReadPlayerAttributes(std::vector<Player*>& players) {
                 // Scatter read request for LocalOrigin
                 uint64_t localOriginAddress = player->BasePointer + OFF_LOCAL_ORIGIN;
                 mem.AddScatterReadRequest(handle, localOriginAddress, &player->LocalOrigin, sizeof(Vector3D));
+
+                // Scatter read request for AbsoluteVelocity
+                uint64_t absoluteVelocityAddress = player->BasePointer + OFF_ABSVELOCITY;
+                mem.AddScatterReadRequest(handle, absoluteVelocityAddress, &player->AbsoluteVelocity, sizeof(Vector3D));
 
                 // Scatter read requests for Health
                 uint64_t healthAddress = player->BasePointer + OFF_HEALTH;
@@ -328,7 +334,7 @@ void UpdateCore() {
             AimAssist->Update_Aimbot();
             AimAssist->Update_Triggerbot();
 
-            Miscellanous->Update();
+            //Miscellanous->Update();
         }
     }
     catch (const std::exception& ex) {
@@ -358,7 +364,7 @@ int main()
 	std::cout << "-----------------------------" << std::endl;
 
 	// Initialize DMA
-	if (!mem.Init("r5apex.exe", true, false))
+	if (!mem.Init("r5apex_dx12.exe", true, false))
 	{
 		std::cout << "Failed to initilize DMA" << std::endl;
         std::cout << "Press ENTER to continue...";

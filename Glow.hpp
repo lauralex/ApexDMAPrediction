@@ -26,6 +26,7 @@ struct Sense {
     //Colors
     float InvisibleGlowColor[3] = { 0, 1, 0 };
     float VisibleGlowColor[3] = { 1, 0, 0 };
+    std::vector<uint8_t> ItemHighlightID = { 15, 40, 45, 52, 63, 9, 55 }; // Gold, Red, Purple, Blue, Grey, Weapons, Ammo
 
     Sense(std::vector<Player*>* Players, Camera* GameCamera, LocalPlayer* Myself) {
         this->Players = Players;
@@ -106,14 +107,14 @@ struct Sense {
 
     Vector2D DummyVector = { 0, 0 };
     void Update() {
-        if (Myself->IsDead) return;
+        //if (Myself->IsDead) return;
 
         if (ItemGlow) {
             uint64_t highlightSettingsPtr = HighlightSettingsPointer;
             if (mem.IsValidPointer(highlightSettingsPtr)) {
                 uint64_t highlightSize = OFF_GLOW_HIGHLIGHT_TYPE_SIZE;
                 const GlowMode newGlowMode = { 137,138,35,127 };
-                for (int highlightId = MinimumItemRarity; highlightId < 39; highlightId++)
+                for (const auto highlightId : ItemHighlightID)
                 {
                     const GlowMode oldGlowMode = mem.Read<GlowMode>(highlightSettingsPtr + (highlightSize * highlightId) + 0, true);
                     if (newGlowMode != oldGlowMode) {

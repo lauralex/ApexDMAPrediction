@@ -437,17 +437,17 @@ struct Aimbot {
     }
 
     int GetBestBone(Player* Target) {
-        float NearestDistance = 999;
-        int NearestBone = 1;
-        for (int i = 0; i < 3; i++) {
-            HitboxType Bone = static_cast<HitboxType>(i);
-            double DistanceFromCrosshair = CalculateDistanceFromCrosshair(Target->GetBonePosition(Bone));
-            if (DistanceFromCrosshair < NearestDistance) {
-                NearestBone = i;
-                NearestDistance = DistanceFromCrosshair;
-            }
-        }
-        return NearestBone;
+        // float NearestDistance = 999;
+        // int NearestBone = 1;
+        // for (int i = 0; i < 3; i++) {
+        //     HitboxType Bone = static_cast<HitboxType>(i);
+        //     double DistanceFromCrosshair = CalculateDistanceFromCrosshair(Target->GetBonePosition(Bone));
+        //     if (DistanceFromCrosshair < NearestDistance) {
+        //         NearestBone = i;
+        //         NearestDistance = DistanceFromCrosshair;
+        //     }
+        // }
+        return 0;
     }
 
     Player* FindBestTarget() {
@@ -514,11 +514,13 @@ struct Aimbot {
         float refinedBulletTravelTime = refinedDistance / (bulletSpeed * bulletSpeedScale);
 
         // Final prediction of target position using refined bullet travel time
-        Vector3D finalPredictedPosition = targetPosition.Add(enemyVelocity.Multiply(refinedBulletTravelTime));
+        auto timeOfFlight = Resolver::solveTimeOfFlight(bulletSpeedScale * bulletSpeed, bulletScale * 500.0f, targetVelocity, targetPosition, playerPosition, Myself->AbsoluteVelocity) + 0.02;
+        auto finalPredictedPosition = Resolver::GetTargetPosition(targetPosition, targetVelocity, timeOfFlight);
 
         // Bullet Drop Prediction
         float drop = Resolver::GetBasicBulletDrop(Myself->CameraPosition, finalPredictedPosition, bulletSpeed, bulletScale);
         finalPredictedPosition.z += drop;
+        finalPredictedPosition.z += 2.0f;
 
         return finalPredictedPosition;
     }

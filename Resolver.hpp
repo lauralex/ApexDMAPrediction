@@ -20,6 +20,60 @@ public:
         return QAngle(pitch, yaw);
     }
 
+	static double solveTimeOfFlight(double v, double g, Vector3D v_t,
+		Vector3D s_t,
+		Vector3D s_w,
+		Vector3D v_w,
+		double initial_guess = 0.01, double tolerance = 1e-3, int max_iterations = 1000)
+	{
+		auto equation = [&](double t)
+			{
+				return
+					std::pow(v_t.x - v_w.x + (s_t.x - s_w.x) / t, 2) +
+					std::pow(v_t.y - v_w.y + (s_t.y - s_w.y) / t, 2) +
+					std::pow(0.5 * g * t + v_t.z - v_w.z + (s_t.z - s_w.z) / t, 2) - std::pow(v, 2);
+			};
+
+		auto derivative = [&](double t)
+			{
+				double term1 = v_t.x - v_w.x + (s_t.x - s_w.x) / t;
+				double term2 = v_t.y - v_w.y + (s_t.y - s_w.y) / t;
+				double term3 = 0.5 * g * t + v_t.z - v_w.z + (s_t.z - s_w.z) / t;
+				double term1_derivative = -1.0 * (s_t.x - s_w.x) / std::pow(t, 2);
+				double term2_derivative = -1.0 * (s_t.y - s_w.y) / std::pow(t, 2);
+				double term3_derivative = 0.5 * g - 1.0 * (s_t.z - s_w.z) / std::pow(t, 2);
+				return 2.0 * (term1 * term1_derivative + term2 * term2_derivative + term3 * term3_derivative);
+			};
+
+		// Print z of the target position
+		//std::cout << "Target z: " << s_t.z << std::endl;
+
+		// Print velocity of target
+		//std::cout << "Target velocity: " << v_t.Magnitude() << std::endl;
+
+		double t = initial_guess;
+		for (int i = 0; i < max_iterations; ++i)
+		{
+			double f_value = equation(t);
+			double f_derivative_value = derivative(t);
+
+			if (std::abs(f_value) < tolerance)
+			{
+				break;
+			}
+			double new_t = t - f_value / f_derivative_value;
+
+			if (new_t < 0.0)
+			{
+				new_t = t / 2.0;
+			}
+			t = new_t;
+		}
+		if (t < 0.0 || t > 2.5)
+			t = 0.01;
+		return t;
+	}
+
     static Vector3D GetTargetPosition(const Vector3D& targetPosition, Vector3D targetVelocity, float time) {
         return targetPosition.Add((targetVelocity.Multiply(time)));
     }
@@ -31,7 +85,7 @@ public:
 
     static float GetBasicBulletDrop(Vector3D startPosition, Vector3D endPosition, float bulletSpeed, float bulletDropRate) {
         float time = GetTimeToTarget(startPosition, endPosition, bulletSpeed);
-        bulletDropRate *= 400.0f;
+        bulletDropRate *= 500.0f;
         return 0.5f * bulletDropRate * time * time;
     }
 

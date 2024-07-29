@@ -217,8 +217,9 @@ public:
 	* @param size The size of the buffer
 	* @return true if successful, false if not.
 	*/
-	bool Read(uintptr_t address, void* buffer, size_t size, bool cache = false) const;
-	bool Read(uintptr_t address, void* buffer, size_t size, int pid, bool cache = false) const;
+	bool Read(uintptr_t address, void* buffer, size_t size) const;
+	bool Read(uintptr_t address, void* buffer, size_t size, int pid) const;
+	bool Read(uintptr_t address, void* buffer, size_t size, bool cache) const;
 
 	/**
 	* brief Reads memory from the process using a template
@@ -226,18 +227,19 @@ public:
 	* @return the value read from the process
 	*/
 	template <typename T>
-	T Read(void* address, bool cache = false)
+	T Read(void* address)
 	{
-		T buffer{ };
+		T buffer { };
 		memset(&buffer, 0, sizeof(T));
-		Read(reinterpret_cast<uint64_t>(address), reinterpret_cast<void*>(&buffer), sizeof(T), cache);
+		Read(reinterpret_cast<uint64_t>(address), reinterpret_cast<void*>(&buffer), sizeof(T));
+
 		return buffer;
 	}
 
 	template <typename T>
-	T Read(uint64_t address, bool cache = false)
+	T Read(uint64_t address)
 	{
-		return Read<T>(reinterpret_cast<void*>(address), cache);
+		return Read<T>(reinterpret_cast<void*>(address));
 	}
 
 	/**
@@ -247,26 +249,55 @@ public:
 	* @return the value read from the process
 	*/
 	template <typename T>
-	T Read(void* address, int pid, bool cache = false)
+	T Read(void* address, int pid)
 	{
-		T buffer{ };
+		T buffer { };
 		memset(&buffer, 0, sizeof(T));
-		Read(reinterpret_cast<uint64_t>(address), reinterpret_cast<void*>(&buffer), sizeof(T), pid, cache);
+		Read(reinterpret_cast<uint64_t>(address), reinterpret_cast<void*>(&buffer), sizeof(T), pid);
+
 		return buffer;
 	}
 
 	template <typename T>
-	T Read(uint64_t address, int pid, bool cache = false)
+	T Read(uint64_t address, int pid)
 	{
-		return Read<T>(reinterpret_cast<void*>(address), pid, cache);
+		return Read<T>(reinterpret_cast<void*>(address), pid);
+	}
+
+	template <typename T>
+	T Read(void* address, bool cache)
+	{
+		T buffer{ };
+		memset(&buffer, 0, sizeof(T));
+		Read(reinterpret_cast<uint64_t>(address), reinterpret_cast<void*>(&buffer), sizeof(T), cache);
+		return buffer;
+	}
+
+	template <typename T>
+	T Read(uint64_t address, bool cache)
+	{
+		return Read<T>(reinterpret_cast<void*>(address), cache);
+	}
+
+	/**
+	* brief Reads a chain of offsets from the address
+	* @param address The address to read from
+	* @param a vector of offset values to read through
+	* @return the value read from the chain
+	*/
+	uint64_t ReadChain(uint64_t base, const std::vector<uint64_t>& offsets)
+	{
+		uint64_t result = Read<uint64_t>(base + offsets.at(0));
+		for (int i = 1; i < offsets.size(); i++) result = Read<uint64_t>(result + offsets.at(i));
+		return result;
 	}
 
 	/**
 	 * \brief Create a scatter handle, this is used for scatter read/write requests
 	 * \return Scatter handle
 	 */
-	VMMDLL_SCATTER_HANDLE CreateScatterHandle();
-	VMMDLL_SCATTER_HANDLE CreateScatterHandle(int pid);
+	VMMDLL_SCATTER_HANDLE CreateScatterHandle() const;
+	VMMDLL_SCATTER_HANDLE CreateScatterHandle(int pid) const;
 
 	/**
 	 * \brief Closes the scatter handle
@@ -293,7 +324,11 @@ public:
 	void ExecuteReadScatter(VMMDLL_SCATTER_HANDLE handle, int pid = 0);
 	void ExecuteWriteScatter(VMMDLL_SCATTER_HANDLE handle, int pid = 0);
 
-	bool IsValidPointer(uint64_t Pointer);
+	static bool IsValidPointer(const uintptr_t address)
+	{
+		return address != 0 && address != 0xCCCCCCCCCCCCCCCC && address != 0xCDCDCDCDCDCDCDCD && address <
+			0x7FFFFFFFFFFF && address > 0x1000;
+	}
 
 	/*the FPGA handle*/
 	VMM_HANDLE vHandle;
